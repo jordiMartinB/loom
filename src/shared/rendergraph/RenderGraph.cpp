@@ -26,8 +26,8 @@ using util::geo::BezierCurve;
 using util::geo::dist;
 using util::geo::DPoint;
 using util::geo::MultiLine;
-using util::geo::Polygon;
 using util::geo::PolyLine;
+
 
 // _____________________________________________________________________________
 RenderGraph::RenderGraph(const shared::linegraph::LineGraph& lg,
@@ -286,9 +286,9 @@ InnerGeom RenderGraph::getTerminusBezier(const LineNode* n,
 }
 
 // _____________________________________________________________________________
-Polygon<double> RenderGraph::getConvexFrontHull(const LineNode* n, double d,
-                                                bool rectangulize, bool tight,
-                                                size_t pointsPerCircle) const {
+util::geo::Polygon<double> RenderGraph::getConvexFrontHull(const LineNode* n, double d,
+                                                           bool rectangulize, bool tight,
+                                                           size_t pointsPerCircle) const {
   double cd = d;
 
   if (n->pl().fronts().size() != 2) {
@@ -301,13 +301,13 @@ Polygon<double> RenderGraph::getConvexFrontHull(const LineNode* n, double d,
               .getLine());
     }
 
-    Polygon<double> hull = util::geo::convexHull(l);
+    util::geo::Polygon<double> hull = util::geo::convexHull(l);
 
     if (rectangulize) {
       double step = tight ? 45 : 1;
       MultiLine<double> ll;
       for (auto& nf : n->pl().fronts()) ll.push_back(nf.geom.getLine());
-      Polygon<double> env = util::geo::convexHull(
+      util::geo::Polygon<double> env = util::geo::convexHull(
           util::geo::shrink(util::geo::getOrientedEnvelope(ll, step), cd / 2));
 
       double incr = (util::geo::area(env) / util::geo::area(hull)) - 1;
@@ -425,7 +425,7 @@ bool RenderGraph::notCompletelyServed(const LineNode* n) {
 }
 
 // _____________________________________________________________________________
-std::vector<Polygon<double>> RenderGraph::getStopGeoms(
+std::vector<util::geo::Polygon<double>> RenderGraph::getStopGeoms(
     const LineNode* n, bool tight, size_t pointsPerCircle) const {
   double d = _defWidth + (2 * _defOutlineWidth + _defSpacing) * 0.8;
   if (notCompletelyServed(n)) {

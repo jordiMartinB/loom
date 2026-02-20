@@ -39,7 +39,6 @@ using util::geo::DPoint;
 using util::geo::DPolygon;
 using util::geo::len;
 using util::geo::MultiPoint;
-using util::geo::Polygon;
 using util::graph::BiDijkstra;
 using util::graph::Dijkstra;
 
@@ -125,7 +124,7 @@ Score Octilinearizer::draw(const CombGraph& cg, const DBox& box,
                            double borderRad, double maxGrDist,
                            OrderMethod orderMethod, bool restrLocSearch,
                            double enfGeoPen, size_t hananIters,
-                           const std::vector<Polygon<double>>& obstacles,
+                           const std::vector<util::geo::Polygon<double>>& obstacles,
                            size_t locSearchIters, size_t abortAfter) {
   size_t jobs = 4;
   std::vector<BaseGraph*> ggs(jobs);
