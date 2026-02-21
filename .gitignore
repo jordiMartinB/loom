@@ -9,6 +9,7 @@ CMakeFiles
 *.cfg
 *.cmake
 /build/
+/build-win/
 *.pyc
 compile_commands.json
 .vimrc
