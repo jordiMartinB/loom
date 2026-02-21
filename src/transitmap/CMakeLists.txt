@@ -18,11 +18,12 @@ configure_file (
 )
 
 add_executable(transitmap ${transitmap_main})
-add_library(transitmap_dep ${transitmap_SRC})
+add_library(transitmap_dep SHARED ${transitmap_SRC})
+set_target_properties(transitmap_dep PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 if (Protobuf_FOUND AND Protobuf_PROTOC_EXECUTABLE)
-	add_dependencies(transitmap_dep proto)
-	target_link_libraries(transitmap transitmap_dep shared_dep dot_dep pb_util_graph pb_util_geo pb_util_json pb_util_xml pb_util proto ${Protobuf_LIBRARIES})
+    add_dependencies(transitmap_dep proto)
+    target_link_libraries(transitmap transitmap_dep shared_dep dot_dep pb_util_graph pb_util_geo pb_util_json pb_util_xml pb_util proto ${Protobuf_LIBRARIES})
 else()
-	target_link_libraries(transitmap transitmap_dep shared_dep dot_dep pb_util_graph pb_util_geo pb_util_json pb_util_xml pb_util)
+    target_link_libraries(transitmap transitmap_dep shared_dep dot_dep pb_util_graph pb_util_geo pb_util_json pb_util_xml pb_util)
 endif()

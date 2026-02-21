@@ -89,6 +89,14 @@ endif()
 
 add_subdirectory(src)
 
+# make sure topo is configured before topo_python
+add_subdirectory(src/loom/src/topo)
+
+# when creating the python module, link the target directly
+# replace any -L/path/to/topo_dep / -ltopo_dep usage with:
+target_link_libraries(topo_python PRIVATE topo_dep shared_dep dot_dep pb_util_geo pb_util_graph pb_util_json pb_util)
+add_dependencies(topo_python topo_dep)
+
 if(NOT WIN32 AND NOT MINGW)
     # Add util library only for non-Windows platforms
     set(UTIL_LIB util)

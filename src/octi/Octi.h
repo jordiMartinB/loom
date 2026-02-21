@@ -18,6 +18,5 @@ void drawComp(shared::linegraph::LineGraph& tg, double avgDist,
               std::vector<shared::linegraph::LineGraph*>& resultGraphs,
               std::vector<octi::basegraph::BaseGraph*>& resultGridGraphs,
               TotalScore& totScore, const octi::config::Config& cfg);
-int run_main(std::vector<std::string> args);
-
+int main(const std::vector<std::string>& args);
 #endif  // OCTI_MAIN_H

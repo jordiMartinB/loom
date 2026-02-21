@@ -1,12 +1,12 @@
 #include <pybind11/pybind11.h>
-#include "LoomMain.h"
+#include <pybind11/stl.h>
+#include "Loom.h"
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(loom, m) {
+PYBIND11_MODULE(loom_python, m) {
     m.doc() = "Python bindings for the loom-qgis-plugin";
 
     // Expose the refactored main function
-    m.def("run_main", &run_main, "Run the main function",
-          py::arg("args"));
+    m.def("main", &main, "Run the main function",py::arg("args"));
 }

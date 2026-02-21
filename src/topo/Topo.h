@@ -5,6 +5,6 @@
 #include <vector>
 
 // Function declarations
-int run_main(const std::vector<std::string>& args);
+int main(const std::vector<std::string>& args); 
 
 #endif  // TOPO_MAIN_H
