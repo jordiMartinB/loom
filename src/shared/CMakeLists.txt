@@ -10,3 +10,7 @@ include_directories(
 add_subdirectory(tests)
 
 add_library(shared_dep ${shared_SRC})
+
+if(NOT WIN32 AND NOT MINGW)
+    target_link_libraries(shared_dep PRIVATE util)
+endif()

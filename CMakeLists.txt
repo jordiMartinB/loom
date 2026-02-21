@@ -89,9 +89,16 @@ endif()
 
 add_subdirectory(src)
 
-add_test(ctest_build_topo_test "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target topoTest)
-add_test(topo_test ${EXECUTABLE_OUTPUT_PATH}/topoTest)
-set_tests_properties (topo_test PROPERTIES DEPENDS ctest_build_topo_test)
+if(NOT WIN32 AND NOT MINGW)
+    # Add util library only for non-Windows platforms
+    set(UTIL_LIB util)
+else()
+    set(UTIL_LIB "")
+endif()
+
+ add_test(ctest_build_topo_test "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target topoTest)
+ add_test(topo_test ${EXECUTABLE_OUTPUT_PATH}/topoTest)
+ set_tests_properties (topo_test PROPERTIES DEPENDS ctest_build_topo_test)
 
 add_test(ctest_build_util_test "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target utilTest)
 add_test(util_test ${EXECUTABLE_OUTPUT_PATH}/utilTest)
