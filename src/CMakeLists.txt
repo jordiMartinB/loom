@@ -1,7 +1,3 @@
-if(NOT WIN32 AND NOT MINGW)
-    target_link_libraries(pb_util PRIVATE util)
-endif()
-
 set(LOOM_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 include_directories(${LOOM_INCLUDE_DIR})

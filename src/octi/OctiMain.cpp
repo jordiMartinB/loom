@@ -10,6 +10,7 @@
 #include <set>
 
 #include "3rdparty/json.hpp"
+#include "OctiMain.h"
 #include "octi/Enlarger.h"
 #include "octi/Octilinearizer.h"
 #include "octi/basegraph/BaseGraph.h"
@@ -459,4 +460,152 @@ int main(int argc, char** argv) {
   }
 
   return 0;
+}
+
+int run_main(const std::vector<std::string>& args) {
+    // Convert vector<string> to argc/argv format
+    int argc = args.size();
+    std::vector<const char*> argv(argc);
+    for (size_t i = 0; i < args.size(); ++i) {
+        argv[i] = args[i].c_str();
+    }
+
+    // Original main logic
+    srand(time(NULL) + rand());
+
+    config::Config cfg;
+    config::ConfigReader cr;
+    cr.read(&cfg, argc, const_cast<char**>(argv.data()));
+
+    util::geo::output::GeoGraphJsonOutput out;
+
+    if (cfg.obstaclePath.size()) {
+        LOGTO(DEBUG, std::cerr) << "Reading obstacle file...";
+        cfg.obstacles = readObstacleFile(cfg.obstaclePath);
+        LOGTO(DEBUG, std::cerr) << "Done. (" << cfg.obstacles.size() << " obst.)";
+    }
+
+    LOGTO(DEBUG, std::cerr) << "Reading graph file...";
+    T_START(read);
+    LineGraph lg;
+
+    if (cfg.fromDot)
+        lg.readFromDot(&(std::cin));
+    else
+        lg.readFromJson(&(std::cin));
+
+    LOGTO(DEBUG, std::cerr) << "Done. (" << T_STOP(read) << "ms)";
+
+    LOGTO(DEBUG, std::cerr) << "Planarizing graph...";
+    T_START(planarize);
+    lg.topologizeIsects();
+    LOGTO(DEBUG, std::cerr) << "Done. (" << T_STOP(planarize) << "ms)";
+
+    std::vector<LineGraph> comps = lg.distConnectedComponents(10000, false);
+
+    util::json::Array jsonScores;
+    std::vector<LineGraph*> resultGraphs;
+    std::vector<BaseGraph*> resultGridGraphs;
+
+    LOGTO(DEBUG, std::cerr) << "Broke input graph into " << comps.size()
+                            << " components";
+
+    TotalScore totScore;
+
+    size_t i = 0;
+
+    for (auto& tg : comps) {
+        LOGTO(DEBUG, std::cerr) << "@ component " << i++;
+        double avgDist = avgStatDist(tg);
+
+        double curDist = avgDist;
+
+        size_t tries = 0;
+        size_t MAX_TRIES = 10;
+
+        LOGTO(DEBUG, std::cerr) << "Average adj. node distance is " << avgDist;
+
+        while (tries < MAX_TRIES) {
+            try {
+                drawComp(tg, curDist, jsonScores, resultGraphs, resultGridGraphs,
+                         totScore, cfg);
+
+                break;
+            } catch (const NoEmbeddingFoundExc& exc) {
+                if (cfg.retryOnError && tries < MAX_TRIES) {
+                    curDist *= 0.85;
+                    tries++;
+                    LOGTO(WARN, std::cerr) << "Retrying with grid size " << curDist;
+                    continue;
+                }
+
+                if (cfg.skipOnError) {
+                    totScore.numNoEmbeddingFound += 1;
+                    jsonScores.push_back(util::json::Dict());
+                    LOGTO(WARN, std::cerr) << exc.what();
+                    break;
+                }
+
+                LOG(ERROR) << exc.what();
+                return 1;
+            }
+        }
+    }
+
+    util::geo::output::GeoGraphJsonOutput gout;
+
+    size_t maxRss = util::getPeakRSS();
+
+    // translate score to JSON
+    util::json::Dict totalScore = util::json::Dict{
+        {"scores", util::json::Dict{{"total-score", totScore.score.full},
+                                    {"topo-violations",
+                                     util::json::Int(totScore.score.violations)},
+                                    {"density-score", totScore.score.dense},
+                                    {"bend-score", totScore.score.bend},
+                                    {"hop-score", totScore.score.hop},
+                                    {"move-score", totScore.score.move}}},
+        {"pens",
+         util::json::Dict{
+             {"density-pen", cfg.pens.densityPen},
+             {"diag-pen", cfg.pens.diagonalPen},
+             {"hori-pen", cfg.pens.horizontalPen},
+             {"vert-pen", cfg.pens.verticalPen},
+             {"180-turn-pen", cfg.pens.p_0},
+             {"135-turn-pen", cfg.pens.p_135},
+             {"90-turn-pen", cfg.pens.p_90},
+             {"45-turn-pen", cfg.pens.p_45},
+         }},
+
+        {"gridgraph-size",
+         util::json::Dict{{"nodes", totScore.gridgraphNumNds},
+                          {"edges", totScore.gridgraphNumEdgs}}},
+        {"combgraph-size",
+         util::json::Dict{{"nodes", totScore.combgraphNumNds},
+                          {"edges", totScore.combgraphNumEdgs}}},
+        {"input-graph-size",
+         util::json::Dict{{"nodes", totScore.inputgraphNumNds},
+                          {"edges", totScore.inputgraphNumEdgs},
+                          {"max-deg", totScore.inputgraphMaxDeg}}},
+        {"misc", util::json::Dict{{"method", cfg.optMode},
+                                  {"deg2heur", cfg.deg2Heur},
+                                  {"max-grid-dist", cfg.maxGrDist}}},
+        {"num-comps-no-embedding-found", totScore.numNoEmbeddingFound},
+        {"num-comps", comps.size()},
+        {"time-ms", totScore.timeMs},
+        {"iterations", totScore.score.iters},
+        {"procs", omp_get_num_procs()},
+        {"peak-memory", util::readableSize(maxRss)},
+        {"peak-memory-bytes", maxRss},
+        {"timestamp", util::json::Int(std::time(0))}};
+
+    if (cfg.optMode == "ilp") {
+        totalScore["ilp"] = util::json::Dict{
+            {"size", util::json::Dict{{"rows", totScore.ilpstats.rows},
+                                      {"cols", totScore.ilpstats.cols}}},
+            {"solve-time", totScore.ilpstats.time},
+            {"optimal", util::json::Bool{totScore.ilpstats.optimal}}};
+    }
+
+    return 0;
 }
