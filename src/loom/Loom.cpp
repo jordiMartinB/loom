@@ -26,15 +26,15 @@ using namespace loom;
 using util::DEBUG;
 using util::ERROR;
 
-int main(const std::vector<std::string>& args) {
+std::string run(const std::vector<std::string>& args) {
 
-  if (args.size() != 3) {
-      std::cerr << "Usage: " << args[0] << " <graph_json_file> <config_json_file>" << std::endl;
-      return 1;
+  if (args.size() != 2) {
+      std::cerr << "Usage: module.main( [<graph_json_file>,<config_json_file>])"<< std::endl;
+      return "";
   }
 
-  std::stringstream graphStream(args[1]);
-  std::stringstream configFile(args[2]);
+  std::stringstream graphStream(args[0]);
+  std::stringstream configFile(args[1]);
 
   // initialize randomness
   srand(time(NULL) + rand());
@@ -117,6 +117,7 @@ int main(const std::vector<std::string>& args) {
   }
 
   util::geo::output::GeoGraphJsonOutput out;
+  std::ostringstream outputStream;
 
   if (cfg.writeStats) {
     util::json::Dict jsonStats = {
@@ -156,10 +157,10 @@ int main(const std::vector<std::string>& args) {
              {"best_num_separations", stats.separations},
              {"line_graph_simplification_time", stats.simplificationTime},
              {"best_score", stats.score}}}};
-    out.printLatLng(g, std::cout, jsonStats);
+    out.printLatLng(g, outputStream, jsonStats);
   } else {
-    out.printLatLng(g, std::cout);
+    out.printLatLng(g, outputStream);
   }
 
-  return (0);
+  return outputStream.str();
 }
