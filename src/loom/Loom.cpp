@@ -48,7 +48,7 @@ int main(const std::vector<std::string>& args) {
   shared::rendergraph::RenderGraph g(5, 1, 5);
 
   // if (cfg.fromDot) {
-  g.readFromDot(&graphStream);
+  g.readFromJson(&graphStream);
   // } else {
   //   g.readFromJson(&std::cin);
   // }

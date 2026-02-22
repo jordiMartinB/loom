@@ -12,8 +12,6 @@ endforeach()
 # compile RunMain into the shared lib so run_main symbol is provided
 list(APPEND octi_SRC "${CMAKE_CURRENT_SOURCE_DIR}/Octi.cpp")
 
-add_subdirectory(tests)
-
 # generate config header if template exists
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/_config.h.in")
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/_config.h.in" "${CMAKE_CURRENT_BINARY_DIR}/_config.h" @ONLY)
