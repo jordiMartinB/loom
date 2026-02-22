@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <set>
 #include <string>
 #include "Loom.h"
@@ -26,28 +27,31 @@ using util::DEBUG;
 using util::ERROR;
 
 int main(const std::vector<std::string>& args) {
-  // Convert vector<string> to argc/argv format
-  int argc = args.size();
-  std::vector<const char*> argv(argc);
-  for (size_t i = 0; i < args.size(); ++i) {
-    argv[i] = args[i].c_str();
+
+  if (args.size() != 3) {
+      std::cerr << "Usage: " << args[0] << " <graph_json_file> <config_json_file>" << std::endl;
+      return 1;
   }
 
-  // Original main logic
+  std::stringstream graphStream(args[1]);
+  std::stringstream configFile(args[2]);
+
+  // initialize randomness
   srand(time(NULL) + rand());
 
   config::Config cfg;
+
   config::ConfigReader cr;
-  cr.read(&cfg, argc, const_cast<char**>(argv.data()));
+  cr.read(&cfg, &configFile);
 
   LOGTO(DEBUG, std::cerr) << "Reading graph...";
   shared::rendergraph::RenderGraph g(5, 1, 5);
 
-  if (cfg.fromDot) {
-    g.readFromDot(&std::cin);
-  } else {
-    g.readFromJson(&std::cin);
-  }
+  // if (cfg.fromDot) {
+  g.readFromDot(&graphStream);
+  // } else {
+  //   g.readFromJson(&std::cin);
+  // }
 
   LOGTO(DEBUG, std::cerr) << "Optimizing...";
 
@@ -58,7 +62,6 @@ int main(const std::vector<std::string>& args) {
                                               cfg.stationCrossWeightDiffSeg)));
   double maxSepPen = g.maxDeg() * std::max(cfg.separationPenWeight,
                                            cfg.stationSeparationWeight);
-
   shared::rendergraph::Penalties pens{maxCrossPen,
                                       maxSepPen,
                                       cfg.crossPenMultiSameSeg,
@@ -110,7 +113,7 @@ int main(const std::vector<std::string>& args) {
   } else {
     LOG(ERROR) << "Unknown optimization method " << cfg.optimMethod
                << std::endl;
-    return 1;
+    exit(1);
   }
 
   util::geo::output::GeoGraphJsonOutput out;
