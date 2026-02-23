@@ -14,7 +14,7 @@ namespace config {
 class ConfigReader {
  public:
   ConfigReader();
-  void read(TopoConfig* targetConfig, int argc, char** argv) const;
+  void read(TopoConfig* cfg, std::stringstream *jsonStream) const;
 
  public:
   void help(const char* bin) const;

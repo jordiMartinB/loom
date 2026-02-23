@@ -23,14 +23,15 @@
 using util::DEBUG;
 
 // _____________________________________________________________________________
-int main(const std::vector<std::string>& args) {
-  // Convert vector<string> to argc/argv format
-  int argc = args.size();
-  std::vector<const char*> argv(argc);
-  for (size_t i = 0; i < args.size(); ++i) argv[i] = args[i].c_str();
+std::string run(const std::vector<std::string>& args) {
 
-  // disable output buffering for standard output
-  setbuf(stdout, NULL);
+  if (args.size() != 2) {
+    std::cerr << "Usage: module.run( [<graph_json_file>,<config_json_file>])"<< std::endl;
+    return "";
+  }
+
+  std::stringstream graphStream(args[0]);
+  std::stringstream configFile(args[1]);
 
   // initialize randomness
   srand(time(NULL) + rand());
@@ -45,10 +46,10 @@ int main(const std::vector<std::string>& args) {
   shared::linegraph::LineGraph lg;
   // read config
   topo::config::ConfigReader cr;
-  cr.read(&cfg, argc, const_cast<char**>(argv.data()));
+  cr.read(&cfg, &configFile);
 
   // read input graph
-  lg.readFromJson(&(std::cin));
+  lg.readFromJson(&graphStream);
 
   if (cfg.randomColors) lg.fillMissingColors();
 
@@ -194,6 +195,8 @@ int main(const std::vector<std::string>& args) {
 
   // output
   util::geo::output::GeoGraphJsonOutput gout;
+  std::ostringstream outputStream;
+
   if (cfg.outputStats) {
     util::json::Dict jsonStats = {
         {"statistics",
@@ -218,14 +221,14 @@ int main(const std::vector<std::string>& args) {
              {"tot_support_graph_edgs", totSupportGraphEdgs},
          }}};
 
-    util::geo::output::GeoJsonOutput out(std::cout, jsonStats);
+    util::geo::output::GeoJsonOutput out(outputStream, jsonStats);
     for (auto gg : resultGraphs) gout.printLatLng(*gg, &out);
     out.flush();
   } else {
-    util::geo::output::GeoJsonOutput out(std::cout);
+    util::geo::output::GeoJsonOutput out(outputStream);
     for (auto gg : resultGraphs) gout.printLatLng(*gg, &out);
     out.flush();
   }
 
-  return 0;
+  return outputStream.str();
 }
