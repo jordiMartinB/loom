@@ -14,9 +14,7 @@ namespace config {
 class ConfigReader {
  public:
   ConfigReader();
-  void read(Config* targetConfig, int argc, char** argv) const;
- private:
-  void help(const char* bin) const;
+  void read(Config* cfg, std::stringstream *jsonStream) const;
 };
 }
 }

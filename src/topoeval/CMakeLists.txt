@@ -14,6 +14,7 @@ configure_file (
 )
 
 add_executable(topoeval ${topoeval_main})
-add_library(topoeval_dep ${topoeval_SRC})
+add_library(topoeval_dep SHARED ${topoeval_SRC})
+set_target_properties(topoeval_dep PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(topoeval topoeval_dep shared_dep dot_dep pb_util_graph pb_util_geo pb_util)
