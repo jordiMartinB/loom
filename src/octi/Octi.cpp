@@ -284,18 +284,23 @@ void drawComp(LineGraph& tg, double avgDist, util::json::Array& jsonScores,
   }
 }
 
-int main(const std::vector<std::string>& args) {
-    // Convert vector<string> to argc/argv format
-    int argc = static_cast<int>(args.size());
-    std::vector<const char*> argv(argc);
-    for (int i = 0; i < argc; ++i) argv[i] = args[i].c_str();
+
+std::string run(const std::vector<std::string>& args) {
+
+    if (args.size() != 2) {
+        std::cerr << "Usage: module.run( [<graph_json_file>,<config_json_file>])"<< std::endl;
+        return "";
+    }
+
+    std::stringstream graphStream(args[0]);
+    std::stringstream configFile(args[1]);
 
     // initialize randomness
     srand(static_cast<unsigned>(time(nullptr)) + rand());
 
     config::Config cfg;
     config::ConfigReader cr;
-    cr.read(&cfg, argc, const_cast<char**>(argv.data()));
+    cr.read(&cfg, &configFile);
 
     util::geo::output::GeoGraphJsonOutput out;
 
@@ -309,10 +314,7 @@ int main(const std::vector<std::string>& args) {
     T_START(read);
     shared::linegraph::LineGraph lg;
 
-    if (cfg.fromDot)
-        lg.readFromDot(&(std::cin));
-    else
-        lg.readFromJson(&(std::cin));
+    lg.readFromJson(&graphStream);
 
     LOGTO(DEBUG, std::cerr) << "Done. (" << T_STOP(read) << "ms)";
 
@@ -357,24 +359,25 @@ int main(const std::vector<std::string>& args) {
                     break;
                 }
                 LOG(ERROR) << exc.what();
-                return 1;
+                return "";
             }
         }
     }
 
     util::geo::output::GeoGraphJsonOutput gout;
+    std::ostringstream outStr;
     size_t maxRss = util::getPeakRSS();
 
     // simplified stats output (keeps original behavior)
     if (cfg.printMode == "gridgraph") {
         if (cfg.writeStats) {
-            util::geo::output::GeoJsonOutput out(std::cout, util::json::Dict{{"statistics", util::json::Dict{}}});
+            util::geo::output::GeoJsonOutput out(outStr, util::json::Dict{{"statistics", util::json::Dict{}}});
             for (auto gg : resultGridGraphs) {
                 gout.printLatLng(*gg, &out);
             }
             out.flush();
         } else {
-            util::geo::output::GeoJsonOutput out(std::cout);
+            util::geo::output::GeoJsonOutput out(outStr);
             for (auto gg : resultGraphs) {
                 gout.printLatLng(*gg, &out);
             }
@@ -382,13 +385,13 @@ int main(const std::vector<std::string>& args) {
         }
     } else {
         if (cfg.writeStats) {
-            util::geo::output::GeoJsonOutput out(std::cout, util::json::Dict{{"statistics", util::json::Dict{}}});
+            util::geo::output::GeoJsonOutput out(outStr, util::json::Dict{{"statistics", util::json::Dict{}}});
             for (auto res : resultGraphs) {
                 gout.printLatLng(*res, &out);
             }
             out.flush();
         } else {
-            util::geo::output::GeoJsonOutput out(std::cout);
+            util::geo::output::GeoJsonOutput out(outStr);
             for (auto res : resultGraphs) {
                 gout.printLatLng(*res, &out);
             }
@@ -396,8 +399,5 @@ int main(const std::vector<std::string>& args) {
         }
     }
 
-    return 0;
+    return outStr.str();
 }
-// _____________________________________________________________________________
-// main() and other helper functions remain in this file.
-// The run_main implementation was moved to RunMain.cpp to be built into the octi_dep shared library.

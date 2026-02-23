@@ -8,6 +8,19 @@ PYBIND11_MODULE(octi_python, m) {
     m.doc() = "Python bindings for the loom-qgis-plugin";
 
     // Expose the refactored main function
-    m.def("main", &main, "Run the main function", py::arg("args"));
+    m.def(
+        "run", 
+        &run, 
+        R"doc(
+            Run the algorithm function.
+
+            Args:
+                args (list[str]): A list of arguments to pass to the algorithm.
+
+            Returns:
+                int: The result of the algorithm execution.
+        )doc",
+        py::arg("args")
+    );
 }
 

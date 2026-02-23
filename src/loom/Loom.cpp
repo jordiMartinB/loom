@@ -29,7 +29,7 @@ using util::ERROR;
 std::string run(const std::vector<std::string>& args) {
 
   if (args.size() != 2) {
-      std::cerr << "Usage: module.main( [<graph_json_file>,<config_json_file>])"<< std::endl;
+      std::cerr << "Usage: module.run( [<graph_json_file>,<config_json_file>])"<< std::endl;
       return "";
   }
 
@@ -47,11 +47,7 @@ std::string run(const std::vector<std::string>& args) {
   LOGTO(DEBUG, std::cerr) << "Reading graph...";
   shared::rendergraph::RenderGraph g(5, 1, 5);
 
-  // if (cfg.fromDot) {
   g.readFromJson(&graphStream);
-  // } else {
-  //   g.readFromJson(&std::cin);
-  // }
 
   LOGTO(DEBUG, std::cerr) << "Optimizing...";
 
