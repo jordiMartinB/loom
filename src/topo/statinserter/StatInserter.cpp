@@ -13,7 +13,7 @@
 
 using namespace topo;
 
-using topo::config::TopoConfig;
+using topo::config::Config;
 
 using util::geo::Box;
 using util::geo::DBox;
@@ -36,7 +36,7 @@ using util::DEBUG;
 using util::VDEBUG;
 
 // _____________________________________________________________________________
-StatInserter::StatInserter(const TopoConfig* cfg, LineGraph* g)
+StatInserter::StatInserter(const Config* cfg, LineGraph* g)
     : _cfg(cfg), _g(g) {
   UNUSED(_cfg);
 }

@@ -15,7 +15,7 @@
 #include "octi/Octilinearizer.h"
 #include "octi/basegraph/BaseGraph.h"
 #include "octi/combgraph/CombGraph.h"
-#include "octi/config/ConfigReader.h"
+#include "shared/config/ConfigReader.h"
 #include "shared/linegraph/LineGraph.h"
 #include "util/Misc.h"
 #include "util/geo/Geo.h"
@@ -285,7 +285,7 @@ void drawComp(LineGraph& tg, double avgDist, util::json::Array& jsonScores,
 }
 
 
-std::string run(const std::vector<std::string>& args) {
+std::string run_octi(const std::vector<std::string>& args) {
 
     if (args.size() != 2) {
         std::cerr << "Usage: module.run( [<graph_json_file>,<config_json_file>])"<< std::endl;
@@ -298,9 +298,11 @@ std::string run(const std::vector<std::string>& args) {
     // initialize randomness
     srand(static_cast<unsigned>(time(nullptr)) + rand());
 
-    config::Config cfg;
-    config::ConfigReader cr;
-    cr.read(&cfg, &configFile);
+    octi::config::Config cfg;
+    shared::config::ConfigReader cr;
+    cr.read(&cfg, &configFile,
+          [](octi::config::Config* c) { /* leave defaults */ },
+          octi::config::jsonToConfig);
 
     util::geo::output::GeoGraphJsonOutput out;
 

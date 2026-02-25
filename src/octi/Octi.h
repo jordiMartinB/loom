@@ -6,7 +6,8 @@
 #include "shared/linegraph/LineGraph.h"
 #include "octi/combgraph/CombGraph.h"
 #include "util/json/Writer.h"
-#include "octi/config/ConfigReader.h"
+#include "octi/basegraph/BaseGraph.h"
+#include "octi/config/OctiConfig.h"
 
 struct TotalScore;
 
@@ -18,5 +19,5 @@ void drawComp(shared::linegraph::LineGraph& tg, double avgDist,
               std::vector<shared::linegraph::LineGraph*>& resultGraphs,
               std::vector<octi::basegraph::BaseGraph*>& resultGridGraphs,
               TotalScore& totScore, const octi::config::Config& cfg);
-std::string run(const std::vector<std::string>& args);
+std::string run_octi(const std::vector<std::string>& args);
 #endif  // OCTI_MAIN_H

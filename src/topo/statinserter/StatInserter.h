@@ -27,7 +27,7 @@ using util::geo::PolyLine;
 using util::geo::RTree;
 using util::geo::SharedSegment;
 
-using topo::config::TopoConfig;
+using topo::config::Config;
 
 using shared::linegraph::LineEdge;
 using shared::linegraph::LineEdgePair;
@@ -71,13 +71,13 @@ struct StationCand {
 
 class StatInserter {
  public:
-  StatInserter(const TopoConfig* cfg, LineGraph* g);
+  StatInserter(const Config* cfg, LineGraph* g);
 
   void init();
   bool insertStations(const OrigEdgs& origEdgs);
 
  private:
-  const config::TopoConfig* _cfg;
+  const config::Config* _cfg;
   LineGraph* _g;
 
   std::vector<StationCand> candidates(const StationOcc& occ,

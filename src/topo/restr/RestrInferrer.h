@@ -18,7 +18,7 @@ using shared::linegraph::LineEdgePL;
 using shared::linegraph::LineGraph;
 using shared::linegraph::LineNode;
 using shared::linegraph::LineNodePL;
-using topo::config::TopoConfig;
+using topo::config::Config;
 using topo::restr::RestrEdge;
 using topo::restr::RestrEdgePL;
 using topo::restr::RestrGraph;
@@ -86,13 +86,13 @@ struct HndlCmp {
 
 class RestrInferrer {
  public:
-  RestrInferrer(const TopoConfig* cfg, LineGraph* g);
+  RestrInferrer(const Config* cfg, LineGraph* g);
 
   void init();
   size_t infer(const OrigEdgs& origEdgs);
 
  private:
-  const TopoConfig* _cfg;
+  const Config* _cfg;
 
   // internal copy of the original, unmodified graph we initialized with
   RestrGraph _rg;

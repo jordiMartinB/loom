@@ -1,6 +1,6 @@
 file(GLOB_RECURSE transitmap_SRC *.cpp)
 
-set(transitmap_main TransitMapMain.cpp)
+set(transitmap_main TransitMap.cpp)
 
 list(REMOVE_ITEM transitmap_SRC ${transitmap_main})
 list(REMOVE_ITEM transitmap_SRC TestMain.cpp)
@@ -10,20 +10,19 @@ include_directories(
 )
 
 add_subdirectory(output/protobuf)
-add_subdirectory(tests)
 
 configure_file (
   "_config.h.in"
   "_config.h"
 )
 
-add_executable(transitmap ${transitmap_main})
-add_library(transitmap_dep SHARED ${transitmap_SRC})
-set_target_properties(transitmap_dep PROPERTIES POSITION_INDEPENDENT_CODE ON)
+# Build object library so sources compile to object files that can be linked into
+# a single library later.
+add_library(transitmap_objects OBJECT ${transitmap_SRC})
+set_target_properties(transitmap_objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_include_directories(transitmap_objects PUBLIC ${LOOM_INCLUDE_DIR})
 
+# If protobuf is used, ensure proto is built before the object compilation
 if (Protobuf_FOUND AND Protobuf_PROTOC_EXECUTABLE)
-    add_dependencies(transitmap_dep proto)
-    target_link_libraries(transitmap transitmap_dep shared_dep dot_dep pb_util_graph pb_util_geo pb_util_json pb_util_xml pb_util proto ${Protobuf_LIBRARIES})
-else()
-    target_link_libraries(transitmap transitmap_dep shared_dep dot_dep pb_util_graph pb_util_geo pb_util_json pb_util_xml pb_util)
+    add_dependencies(transitmap_objects proto)
 endif()

@@ -1,6 +1,6 @@
-file(GLOB_RECURSE dot_SRC *.cpp)
-
 set(dot2tg_main Dot2TgMain.cpp)
+
+file(GLOB_RECURSE dot_SRC *.cpp)
 
 list(REMOVE_ITEM dot_SRC ${dot2tg_main})
 list(REMOVE_ITEM dot_SRC TestMain.cpp)
@@ -19,15 +19,10 @@ configure_file (
   "_config.h"
 )
 
-add_executable(dot2tg ${dot2tg_main})
-add_library(dot_dep ${dot_SRC})
+# Build object library so sources compile to object files that can be linked into
+# a single library later.
+add_library(dot_objects OBJECT ${dot_SRC})
+set_target_properties(dot_objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-target_include_directories(dot_dep PUBLIC ${PROJECT_SOURCE_DIR}/src/cppgtfs/src)
-target_link_libraries(dot_dep PUBLIC loom_includes)
-
-# Conditionally link util library only for non-Windows platforms
-if(NOT WIN32 AND NOT MINGW)
-    target_link_libraries(dot2tg dot_dep util -lpthread)
-else()
-    target_link_libraries(dot2tg dot_dep -lpthread)
-endif()
+# Expose include dirs and usage requirements on the object library.
+target_include_directories(dot_objects PUBLIC ${PROJECT_SOURCE_DIR}/src/cppgtfs/src)

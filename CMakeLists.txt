@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.5)
 set(CMAKE_CXX_STANDARD 17)
 
-project (loom)
+project (loom-python-plugin)
 
 if (CMAKE_BUILD_TYPE)
 	string(SUBSTRING ${CMAKE_BUILD_TYPE} 0 1 FIRST_CHAR)
@@ -9,10 +9,11 @@ if (CMAKE_BUILD_TYPE)
 	string(REGEX REPLACE "^.(.*)" "${FIRST_CHAR}\\1" CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
 endif()
 
-enable_testing()
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
-set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/lib/debug")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/lib/release")
+
+option(BUILD_TESTS "Build tests" OFF)
 
 find_package(OpenMP)
 if(OPENMP_FOUND)
@@ -20,48 +21,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-find_package(GLPK)
-find_package(Gurobi)
-find_package(COIN)
-find_package(Protobuf)
 find_package(LibZip)
-
-# set compiler flags, see http://stackoverflow.com/questions/7724569/debug-vs-release-in-cmake
-if(OPENMP_FOUND)
-	set(CMAKE_CXX_FLAGS "${OpenMP_CXX_FLAGS} -O3 -Wall -Wno-format-extra-args -Wextra -Wformat-nonliteral -Wformat-security -Wformat=2")
-
-else()
-	message(STATUS "Configuring without OpenMP")
-	set(CMAKE_CXX_FLAGS "-O3 -Wall -Wno-format-extra-args -Wextra -Wformat-nonliteral -Wformat-security -Wformat=2")
-endif()
-
-if(GUROBI_FOUND)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGUROBI_FOUND=1")
-else()
-	message(STATUS "Configuring without Gurobi, library was not found")
-endif()
-
-if(Protobuf_FOUND AND Protobuf_PROTOC_EXECUTABLE)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPROTOBUF_FOUND=1")
-else()
-	if (NOT Protobuf_FOUND)
-		message(STATUS "Configuring without protbuf support, libprotobuf was not found")
-	elseif (NOT Protobuf_PROTOC_EXECUTABLE)
-		message(STATUS "Configuring without protbuf support, protobuf compiler was not found")
-	endif()
-endif()
-
-if(GLPK_FOUND)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGLPK_FOUND=1")
-else()
-	message(STATUS "Configuring without GLPK")
-endif()
-
-if(COIN_FOUND)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOIN_FOUND=1")
-else()
-	message(STATUS "Configuring without COIN-OR")
-endif()
 
 if (LIBZIP_FOUND)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLIBZIP_FOUND=1")
@@ -77,6 +37,24 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS} -g -DLOGLEVEL=3")
 # export compile commands to tools like clang
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Use modern FindPython with pybind11
+set(PYBIND11_FINDPYTHON ON)
+find_package(pybind11 REQUIRED)
+
+# Use modern Python3 module
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+
+# Include Python3 headers
+include_directories(${Python3_INCLUDE_DIRS})
+
+# --- added: provide LOOM_INCLUDE_DIR for subprojects and expose generated headers
+set(LOOM_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/src")
+include_directories(${LOOM_INCLUDE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_BINARY_DIR}/src)
+# --- end added
+
+# Make project headers and generated headers available to all subdirectories/targets
+# include_directories(${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR})
+
 # http://brianmilco.blogspot.de/2012/11/cmake-automatically-use-git-tags-as.html
 include(GetGitRevisionDescription)
 git_get_tag(VERSION_GIT)
@@ -87,55 +65,53 @@ else()
     set(VERSION_GIT_FULL "${VERSION_GIT}-${VERSION_GIT_IS_DIRTY}")
 endif()
 
-add_subdirectory(src)
+add_subdirectory(src/util)
+add_subdirectory(src/shared)
+add_subdirectory(src/transitmap)
+add_subdirectory(src/loom)
+add_subdirectory(src/cppgtfs)
+add_subdirectory(src/gtfs2graph)
+add_subdirectory(src/topo)
+add_subdirectory(src/octi)
+add_subdirectory(src/dot)
 
-# make sure topo is configured before topo_python
-add_subdirectory(src/loom/src/topo)
+file(GLOB_RECURSE loom_SRC *.cpp)
 
-# when creating the python module, link the target directly
-# replace any -L/path/to/topo_dep / -ltopo_dep usage with:
-target_link_libraries(topo_python PRIVATE topo_dep shared_dep dot_dep pb_util_geo pb_util_graph pb_util_json pb_util)
-add_dependencies(topo_python topo_dep)
+# After subdirectories that create *_objects targets (shared_objects, loom_objects, topo_objects, octi_objects, cppgtfs_objects, dot_objects, gtfs2graph_objects, transitmap_objects, etc.)
+# Add a single combined library that links all object files into one shared library.
 
-if(NOT WIN32 AND NOT MINGW)
-    # Add util library only for non-Windows platforms
-    set(UTIL_LIB util)
-else()
-    set(UTIL_LIB "")
-endif()
-
- add_test(ctest_build_topo_test "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target topoTest)
- add_test(topo_test ${EXECUTABLE_OUTPUT_PATH}/topoTest)
- set_tests_properties (topo_test PROPERTIES DEPENDS ctest_build_topo_test)
-
-add_test(ctest_build_util_test "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target utilTest)
-add_test(util_test ${EXECUTABLE_OUTPUT_PATH}/utilTest)
-set_tests_properties (util_test PROPERTIES DEPENDS ctest_build_util_test)
-
-add_test(ctest_build_shared_test "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target sharedTest)
-add_test(shared_test ${EXECUTABLE_OUTPUT_PATH}/sharedTest)
-set_tests_properties (shared_test PROPERTIES DEPENDS ctest_build_shared_test)
-
-add_test(ctest_build_loom_test "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target loomTest)
-add_test(loom_test ${EXECUTABLE_OUTPUT_PATH}/loomTest)
-set_tests_properties (loom_test PROPERTIES DEPENDS ctest_build_loom_test)
-
-add_test(ctest_build_octi_test "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target octiTest)
-add_test(octi_test ${EXECUTABLE_OUTPUT_PATH}/octiTest)
-set_tests_properties (octi_test PROPERTIES DEPENDS ctest_build_octi_test)
-
-add_test(ctest_build_transitmap_test "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target transitmapTest)
-add_test(transitmap_test ${EXECUTABLE_OUTPUT_PATH}/transitmapTest)
-set_tests_properties (transitmap_test PROPERTIES DEPENDS ctest_build_transitmap_test)
-
-# handles install target
-
-install(
-	FILES README.md DESTINATION share/${PROJECT_NAME} PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
+add_library(loom-python-plugin SHARED
+	$<TARGET_OBJECTS:util_objects>
+    $<TARGET_OBJECTS:shared_objects>
+    $<TARGET_OBJECTS:loom_objects>
+    $<TARGET_OBJECTS:topo_objects>
+    $<TARGET_OBJECTS:octi_objects>
+    $<TARGET_OBJECTS:cppgtfs_objects>
+    $<TARGET_OBJECTS:dot_objects>
+    $<TARGET_OBJECTS:gtfs2graph_objects>
+    $<TARGET_OBJECTS:transitmap_objects>
 )
 
-install(
-  FILES ${CMAKE_BINARY_DIR}/transitmap ${CMAKE_BINARY_DIR}/topo ${CMAKE_BINARY_DIR}/topoeval ${CMAKE_BINARY_DIR}/loom ${CMAKE_BINARY_DIR}/octi DESTINATION bin
-  PERMISSIONS OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+set_target_properties(loom-python-plugin PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+# Ensure includes visible to consumers
+target_include_directories(loom-python-plugin PUBLIC
+    ${PROJECT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_BINARY_DIR}   # if any generated headers live here
 )
 
+# Propagate usage requirements/links from the object targets so consumers inherit them.
+# Linking to the object targets propagates their PUBLIC/INTERFACE link requirements.
+target_link_libraries(loom-python-plugin PUBLIC
+    shared_objects
+    loom_objects
+    topo_objects
+    octi_objects
+    cppgtfs_objects
+    dot_objects
+    gtfs2graph_objects
+    transitmap_objects
+    util_objects                      # <-- link util objects so its usage requirements propagate
+    # system/third-party libs (if not already handled by object targets)
+    ${GLPK_LIBRARY} ${GUROBI_LIBRARY} ${COIN_LIBRARIES} -lpthread
+)

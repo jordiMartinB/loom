@@ -12,12 +12,12 @@
 
 #include "shared/rendergraph/Penalties.h"
 #include "shared/rendergraph/RenderGraph.h"
-#include "transitmap/config/ConfigReader.cpp"
 #include "transitmap/config/TransitMapConfig.h"
 #include "transitmap/graph/GraphBuilder.h"
 #include "transitmap/output/MvtRenderer.h"
 #include "transitmap/output/SvgRenderer.h"
 #include "util/log/Log.h"
+#include "shared/config/ConfigReader.h"
 
 using shared::linegraph::LineGraph;
 using shared::rendergraph::RenderGraph;
@@ -27,14 +27,26 @@ using util::DEBUG;
 using util::ERROR;
 
 // _____________________________________________________________________________
-int main(int argc, char** argv) {
+std::string run_transitmap(const std::vector<std::string>& args) {
+
+  if (args.size() != 2) {
+    std::cerr << "Usage: module.run( [<graph_json_file>,<config_json_file>])"<< std::endl;
+    return "";
+  }
+
+  std::stringstream graphStream(args[0]);
+  std::stringstream configFile(args[1]);
+  std::ostringstream ss;
+  
   // initialize randomness
   srand(time(NULL) + rand());
 
   transitmapper::config::Config cfg;
 
-  transitmapper::config::ConfigReader cr;
-  cr.read(&cfg, argc, argv);
+  shared::config::ConfigReader cr;
+  cr.read(&cfg, &configFile,
+          [](transitmapper::config::Config* c) { /* leave defaults */ },
+          transitmapper::config::jsonToConfig);
 
   T_START(TIMER);
 
@@ -117,7 +129,8 @@ int main(int argc, char** argv) {
     }
 
     LOGTO(DEBUG, std::cerr) << "Outputting to SVG ...";
-    transitmapper::output::SvgRenderer svgOut(&std::cout, &cfg);
+    // to string
+    transitmapper::output::SvgRenderer svgOut(&ss, &cfg);
     svgOut.print(g);
   } else {
     LOG(ERROR) << "Unknown render method " << cfg.renderMethod;
@@ -126,12 +139,5 @@ int main(int argc, char** argv) {
 
   double took = T_STOP(TIMER);
 
-  if (cfg.writeStats) {
-    util::json::Writer wr(&std::cout);
-    wr.obj();
-    wr.keyVal("time", took);
-    wr.closeAll();
-  }
-
-  return (0);
+  return ss.str();
 }

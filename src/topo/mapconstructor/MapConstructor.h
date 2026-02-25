@@ -27,7 +27,7 @@ using util::geo::Point;
 using util::geo::PolyLine;
 using util::geo::SharedSegment;
 
-using topo::config::TopoConfig;
+using topo::config::Config;
 
 using shared::linegraph::LineEdge;
 using shared::linegraph::LineEdgePair;
@@ -68,7 +68,7 @@ struct ShrdSegWrap {
 
 class MapConstructor {
  public:
-  MapConstructor(const TopoConfig* cfg, LineGraph* g);
+  MapConstructor(const Config* cfg, LineGraph* g);
 
   int collapseShrdSegs();
   int collapseShrdSegs(double dCut);
@@ -88,7 +88,7 @@ class MapConstructor {
   void removeOrphanLines();
 
  private:
-  const config::TopoConfig* _cfg;
+  const config::Config* _cfg;
   LineGraph* _g;
 
   LineNode* ndCollapseCand(const std::set<LineNode*>& notFrom,

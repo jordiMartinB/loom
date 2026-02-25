@@ -5,7 +5,8 @@ set(topoeval_main TopoEvalMain.cpp)
 list(REMOVE_ITEM topoeval_SRC ${topoeval_main})
 
 include_directories(
-	${LOOM_INCLUDE_DIR}
+    ${LOOM_INCLUDE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 configure_file (
@@ -13,8 +14,12 @@ configure_file (
   "_config.h"
 )
 
-add_executable(topoeval ${topoeval_main})
-add_library(topoeval_dep SHARED ${topoeval_SRC})
-set_target_properties(topoeval_dep PROPERTIES POSITION_INDEPENDENT_CODE ON)
+# build sources as an OBJECT library so their object files can be linked later
+add_library(topoeval_objects OBJECT ${topoeval_SRC})
+set_target_properties(topoeval_objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-target_link_libraries(topoeval topoeval_dep shared_dep dot_dep pb_util_graph pb_util_geo pb_util)
+# provide an interface target to propagate link requirements to consumers
+add_library(topoeval_dep INTERFACE)
+
+add_executable(topoeval ${topoeval_main})
+target_link_libraries(topoeval topoeval_dep)

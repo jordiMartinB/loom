@@ -14,7 +14,7 @@
 
 using topo::MapConstructor;
 using topo::ShrdSegWrap;
-using topo::config::TopoConfig;
+using topo::config::Config;
 
 using util::geo::Box;
 using util::geo::DBox;
@@ -39,7 +39,7 @@ using util::DEBUG;
 const static double MAX_COLLAPSED_SEG_LENGTH = 500;
 
 // _____________________________________________________________________________
-MapConstructor::MapConstructor(const TopoConfig* cfg, LineGraph* g)
+MapConstructor::MapConstructor(const Config* cfg, LineGraph* g)
     : _cfg(cfg), _g(g) {}
 
 // _____________________________________________________________________________

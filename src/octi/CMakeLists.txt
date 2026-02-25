@@ -13,20 +13,18 @@ endforeach()
 list(APPEND octi_SRC "${CMAKE_CURRENT_SOURCE_DIR}/Octi.cpp")
 
 # generate config header if template exists
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/_config.h.in")
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/_config.h.in" "${CMAKE_CURRENT_BINARY_DIR}/_config.h" @ONLY)
-endif()
+configure_file (
+  "_config.h.in"
+  "_config.h"
+)
 
-# Build as a shared library
-add_library(octi_dep SHARED ${octi_SRC})
-set_target_properties(octi_dep PROPERTIES POSITION_INDEPENDENT_CODE ON)
+# Build as object library (to be combined later)
+add_library(octi_objects OBJECT ${octi_SRC})
+set_target_properties(octi_objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # Add the octi directory to the include paths (make generated headers visible)
-target_include_directories(octi_dep PUBLIC
+target_include_directories(octi_objects PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}/..
 )
-
-# Link dependencies
-target_link_libraries(octi_dep PUBLIC loom_includes shared_dep pb_util_geo pb_util_graph pb_util_json pb_util dot_dep ${GLPK_LIBRARY} ${GUROBI_LIBRARY} ${COIN_LIBRARIES} -lpthread)

@@ -12,7 +12,7 @@
 
 #include "Topo.h"
 #include "shared/linegraph/LineGraph.h"
-#include "topo/config/ConfigReader.h"
+#include "shared/config/ConfigReader.h"
 #include "topo/config/TopoConfig.h"
 #include "topo/mapconstructor/MapConstructor.h"
 #include "topo/restr/RestrInferrer.h"
@@ -23,7 +23,7 @@
 using util::DEBUG;
 
 // _____________________________________________________________________________
-std::string run(const std::vector<std::string>& args) {
+std::string run_topo(const std::vector<std::string>& args) {
 
   if (args.size() != 2) {
     std::cerr << "Usage: module.run( [<graph_json_file>,<config_json_file>])"<< std::endl;
@@ -36,7 +36,7 @@ std::string run(const std::vector<std::string>& args) {
   // initialize randomness
   srand(time(NULL) + rand());
 
-  topo::config::TopoConfig cfg;
+  topo::config::Config cfg;
 
   size_t iters = 0;
   double constrT = 0;
@@ -45,8 +45,11 @@ std::string run(const std::vector<std::string>& args) {
 
   shared::linegraph::LineGraph lg;
   // read config
-  topo::config::ConfigReader cr;
-  cr.read(&cfg, &configFile);
+  shared::config::ConfigReader cr;
+  cr.read(&cfg, &configFile,
+          [](topo::config::Config* c) { /* leave defaults */ },
+          topo::config::jsonToConfig);
+
 
   // read input graph
   lg.readFromJson(&graphStream);

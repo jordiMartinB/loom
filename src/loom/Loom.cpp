@@ -10,12 +10,12 @@
 #include <set>
 #include <string>
 #include "Loom.h"
-#include "loom/config/ConfigReader.cpp"
 #include "loom/config/LoomConfig.h"
 #include "loom/optim/CombOptimizer.h"
 #include "loom/optim/CombNoILPOptimizer.h"
 #include "loom/optim/GreedyOptimizer.h"
 #include "loom/optim/ILPEdgeOrderOptimizer.h"
+#include "shared/config/ConfigReader.h"
 #include "shared/rendergraph/Penalties.h"
 #include "shared/rendergraph/RenderGraph.h"
 #include "util/geo/PolyLine.h"
@@ -26,7 +26,7 @@ using namespace loom;
 using util::DEBUG;
 using util::ERROR;
 
-std::string run(const std::vector<std::string>& args) {
+std::string run_loom(const std::vector<std::string>& args) {
 
   if (args.size() != 2) {
       std::cerr << "Usage: module.run( [<graph_json_file>,<config_json_file>])"<< std::endl;
@@ -39,10 +39,13 @@ std::string run(const std::vector<std::string>& args) {
   // initialize randomness
   srand(time(NULL) + rand());
 
-  config::Config cfg;
+  loom::config::Config cfg;
+  shared::config::ConfigReader cr;
+  
+  cr.read(&cfg, &configFile,
+          [](loom::config::Config* c) { /* leave defaults */ },
+          loom::config::jsonToConfig);
 
-  config::ConfigReader cr;
-  cr.read(&cfg, &configFile);
 
   LOGTO(DEBUG, std::cerr) << "Reading graph...";
   shared::rendergraph::RenderGraph g(5, 1, 5);

@@ -18,7 +18,7 @@ using topo::restr::RestrInferrer;
 using util::DEBUG;
 
 // _____________________________________________________________________________
-RestrInferrer::RestrInferrer(const TopoConfig* cfg, LineGraph* g)
+RestrInferrer::RestrInferrer(const Config* cfg, LineGraph* g)
     : _cfg(cfg), _tg(g) {}
 
 // _____________________________________________________________________________

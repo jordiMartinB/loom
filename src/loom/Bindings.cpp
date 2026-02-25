@@ -8,7 +8,7 @@ PYBIND11_MODULE(loom_python, m) {
     m.doc() = "Python bindings for the loom-qgis-plugin";
 
     // Expose the refactored main function
-    m.def("run", &run, 
+    m.def("run_loom", &run_loom,
           R"doc(
 Run the LOOM algorithm.
 

@@ -9,8 +9,8 @@ PYBIND11_MODULE(octi_python, m) {
 
     // Expose the refactored main function
     m.def(
-        "run", 
-        &run, 
+        "run_octi", 
+        &run_octi, 
         R"doc(
             Run the algorithm function.
 

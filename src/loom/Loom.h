@@ -5,6 +5,6 @@
 #include <vector>
 
 // Function declarations
-std::string run(const std::vector<std::string>& args);
+std::string run_loom(const std::vector<std::string>& args);
 
 #endif  // LOOM_MAIN_H

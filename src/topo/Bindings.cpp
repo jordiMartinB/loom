@@ -10,17 +10,17 @@ PYBIND11_MODULE(topo_python, m) {
         Python bindings for the Topo module in the loom-qgis-plugin.
 
         This module provides access to the core functionality of the Topo library,
-        allowing Python scripts to interact with and execute the `run` function
-        of the Topo module. The `run` function accepts arguments as a list of strings
+        allowing Python scripts to interact with and execute the `run_topo` function
+        of the Topo module. The `run_topo` function accepts arguments as a list of strings
         and processes them accordingly.
 
         Example usage:
             import topo_python
-            result = topo_python.run(["arg1", "arg2", "arg3"])
+            result = topo_python.run_topo(["arg1", "arg2", "arg3"])
     )pbdoc";
 
-    // Expose the refactored run function
-    m.def("run", &run, 
+    // Expose the refactored run_topo function
+    m.def("run_topo", &run_topo, 
           R"pbdoc(
               Execute the Topo algorithm with the specified arguments.
 
