@@ -23,3 +23,4 @@ compile_commands.json
 *.log
 .cache
 .vscode/settings.json
+./tests/outputs/
