@@ -59,9 +59,9 @@ std::string run_transitmap(const std::vector<std::string>& args) {
 #ifdef PROTOBUF_FOUND
     LineGraph lg;
     if (cfg.fromDot)
-      lg.readFromDot(&std::cin);
+      lg.readFromDot(&graphStream);
     else
-      lg.readFromJson(&std::cin);
+      lg.readFromJson(&graphStream);
 
     if (cfg.randomColors) lg.fillMissingColors();
 
@@ -107,9 +107,9 @@ std::string run_transitmap(const std::vector<std::string>& args) {
   } else if (cfg.renderMethod == "svg") {
     RenderGraph g(cfg.lineWidth, cfg.outlineWidth, cfg.lineSpacing);
     if (cfg.fromDot)
-      g.readFromDot(&std::cin);
+      g.readFromDot(&graphStream);
     else
-      g.readFromJson(&std::cin);
+      g.readFromJson(&graphStream);
 
     if (cfg.randomColors) g.fillMissingColors();
 
