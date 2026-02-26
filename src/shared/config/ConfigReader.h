@@ -17,7 +17,9 @@ namespace config {
 
 class ConfigReader {
  public:
-  ConfigReader();
+  
+  ConfigReader(){};
+
   template <typename ConfigT, typename DefaultsSetter, typename JsonMapper>
     void read(ConfigT* cfg, std::stringstream* jsonStream, DefaultsSetter defaults,
                        JsonMapper mapper);

@@ -81,7 +81,7 @@ file(GLOB_RECURSE loom_SRC *.cpp)
 # After subdirectories that create *_objects targets (shared_objects, loom_objects, topo_objects, octi_objects, cppgtfs_objects, dot_objects, gtfs2graph_objects, transitmap_objects, etc.)
 # Add a single combined library that links all object files into one shared library.
 
-add_library(loom-python-plugin SHARED
+add_library(loom-python-plugin MODULE
 	$<TARGET_OBJECTS:util_objects>
     $<TARGET_OBJECTS:shared_objects>
     $<TARGET_OBJECTS:loom_objects>
@@ -93,26 +93,14 @@ add_library(loom-python-plugin SHARED
     $<TARGET_OBJECTS:transitmap_objects>
 )
 
-set_target_properties(loom-python-plugin PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
 # Ensure includes visible to consumers
 target_include_directories(loom-python-plugin PUBLIC
     ${PROJECT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_BINARY_DIR}   # if any generated headers live here
+    ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-# Propagate usage requirements/links from the object targets so consumers inherit them.
-# Linking to the object targets propagates their PUBLIC/INTERFACE link requirements.
-target_link_libraries(loom-python-plugin PUBLIC
-    shared_objects
-    loom_objects
-    topo_objects
-    octi_objects
-    cppgtfs_objects
-    dot_objects
-    gtfs2graph_objects
-    transitmap_objects
-    util_objects                      # <-- link util objects so its usage requirements propagate
-    # system/third-party libs (if not already handled by object targets)
-    ${GLPK_LIBRARY} ${GUROBI_LIBRARY} ${COIN_LIBRARIES} -lpthread
+target_link_libraries(loom-python-plugin PRIVATE
+    ${Python3_LIBRARIES}
+    ${LIBZIP_LIBRARY}
+    -lpthread
 )
