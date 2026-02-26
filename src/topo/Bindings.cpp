@@ -1,10 +1,10 @@
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h>  // Enable STL type support for Python bindings
+#include <pybind11/stl.h>
 #include "Topo.h"
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(topo_python, m) {
+void register_topo(py::module &m) {
     // Updated module description
     m.doc() = R"pbdoc(
         Python bindings for the Topo module in the loom-qgis-plugin.
