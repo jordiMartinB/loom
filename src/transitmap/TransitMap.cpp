@@ -16,6 +16,7 @@
 #include "transitmap/graph/GraphBuilder.h"
 #include "transitmap/output/MvtRenderer.h"
 #include "transitmap/output/SvgRenderer.h"
+#include "transitmap/TransitMap.h"
 #include "util/log/Log.h"
 #include "shared/config/ConfigReader.h"
 

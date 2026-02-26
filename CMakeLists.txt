@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.5)
+cmake_minimum_required (VERSION 3.10)
 set(CMAKE_CXX_STANDARD 17)
 
 project (loom-python-plugin)
@@ -76,13 +76,11 @@ add_subdirectory(src/topo)
 add_subdirectory(src/octi)
 add_subdirectory(src/dot)
 
-file(GLOB_RECURSE loom_SRC *.cpp)
-
-# After subdirectories that create *_objects targets (shared_objects, loom_objects, topo_objects, octi_objects, cppgtfs_objects, dot_objects, gtfs2graph_objects, transitmap_objects, etc.)
-# Add a single combined library that links all object files into one shared library.
-
-add_library(loom-python-plugin MODULE
-	$<TARGET_OBJECTS:util_objects>
+# Use pybind11_add_module so PyInit_loom is generated correctly.
+# The output will be named loom.cpython-<ver>-<arch>-linux-gnu.so
+pybind11_add_module(loom
+    src/Python.cpp
+    $<TARGET_OBJECTS:util_objects>
     $<TARGET_OBJECTS:shared_objects>
     $<TARGET_OBJECTS:loom_objects>
     $<TARGET_OBJECTS:topo_objects>
@@ -93,14 +91,20 @@ add_library(loom-python-plugin MODULE
     $<TARGET_OBJECTS:transitmap_objects>
 )
 
-# Ensure includes visible to consumers
-target_include_directories(loom-python-plugin PUBLIC
+target_include_directories(loom PUBLIC
     ${PROJECT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-target_link_libraries(loom-python-plugin PRIVATE
-    ${Python3_LIBRARIES}
+target_link_libraries(loom PRIVATE
     ${LIBZIP_LIBRARY}
     -lpthread
+)
+
+# Override the output filename to libloom-python-plugin.so
+# while keeping the pybind11 PyInit_loom symbol intact
+set_target_properties(loom PROPERTIES
+    OUTPUT_NAME "loom-python-plugin"
+    PREFIX "lib"
+    SUFFIX ".so"
 )

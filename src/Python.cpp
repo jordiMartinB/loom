@@ -1,9 +1,9 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include "src/loom/Loom.h"
-#include "src/topo/Topo.h"
-#include "src/octi/Octi.h"
-#include "src/transitmap/Transitmap.h"
+#include "loom/Loom.h"
+#include "topo/Topo.h"
+#include "octi/Octi.h"
+#include "transitmap/TransitMap.h"
 
 
 
