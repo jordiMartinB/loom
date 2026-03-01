@@ -48,29 +48,24 @@ option(BUILD_TESTS "Build tests" OFF)
 # -----------------------------------------------------------------------
 # Compiler flags per build type
 # -----------------------------------------------------------------------
-# Common flags (applied to all build types)
-set(LOOM_COMMON_FLAGS "-Wall -Wextra")
-
-if(LOOM_WINDOWS)
-    # MinGW needs this for proper Windows API level
-    set(LOOM_COMMON_FLAGS "${LOOM_COMMON_FLAGS} -D_WIN32_WINNT=0x0601")
+if(MSVC)
+    set(LOOM_COMMON_FLAGS "/W3 /EHsc")
+    set(CMAKE_CXX_FLAGS_DEBUG          "/Od /Zi /MDd")
+    set(CMAKE_CXX_FLAGS_RELEASE        "/O2 /MD")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/O2 /Zi /MD")
+    set(CMAKE_CXX_FLAGS_MINSIZEREL     "/O1 /MD")
+else()
+    set(LOOM_COMMON_FLAGS "-Wall -Wextra")
+    if(LOOM_WINDOWS)
+        set(LOOM_COMMON_FLAGS "${LOOM_COMMON_FLAGS} -D_WIN32_WINNT=0x0601")
+    endif()
+    set(CMAKE_CXX_FLAGS_DEBUG          "-g -O0")
+    set(CMAKE_CXX_FLAGS_RELEASE        "-O3 -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
 endif()
 
-set(CMAKE_CXX_FLAGS_DEBUG
-    "${LOOM_COMMON_FLAGS} -Og -g3 -DLOGLEVEL=3 -D_DEBUG"
-    CACHE STRING "Flags for Debug builds" FORCE)
-
-set(CMAKE_CXX_FLAGS_RELEASE
-    "${LOOM_COMMON_FLAGS} -O3 -DLOGLEVEL=2 -DNDEBUG"
-    CACHE STRING "Flags for Release builds" FORCE)
-
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO
-    "${LOOM_COMMON_FLAGS} -O2 -g -DLOGLEVEL=3 -DNDEBUG"
-    CACHE STRING "Flags for RelWithDebInfo builds" FORCE)
-
-set(CMAKE_CXX_FLAGS_MINSIZEREL
-    "${LOOM_COMMON_FLAGS} -Os -DLOGLEVEL=2 -DNDEBUG"
-    CACHE STRING "Flags for MinSizeRel builds" FORCE)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LOOM_COMMON_FLAGS}")
 
 # -----------------------------------------------------------------------
 # OpenMP
