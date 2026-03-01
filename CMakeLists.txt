@@ -49,13 +49,27 @@ option(BUILD_TESTS "Build tests" OFF)
 # Compiler flags per build type
 # -----------------------------------------------------------------------
 if(MSVC)
-    set(LOOM_COMMON_FLAGS "/W3 /EHsc")
+    set(LOOM_COMMON_FLAGS "/W3 /EHsc /wd4244 /wd4267 /wd4996 /wd4251 /wd4127")
+    add_compile_definitions(
+        _CRT_SECURE_NO_WARNINGS
+        _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
+        NOMINMAX
+        WIN32_LEAN_AND_MEAN
+    )
     set(CMAKE_CXX_FLAGS_DEBUG          "/Od /Zi /MDd")
     set(CMAKE_CXX_FLAGS_RELEASE        "/O2 /MD")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/O2 /Zi /MD")
     set(CMAKE_CXX_FLAGS_MINSIZEREL     "/O1 /MD")
 else()
-    set(LOOM_COMMON_FLAGS "-Wall -Wextra")
+    set(LOOM_COMMON_FLAGS
+        "-Wall -Wextra"
+        "-Wno-unused-parameter"
+        "-Wno-unused-variable"
+        "-Wno-sign-compare"
+        "-Wno-deprecated-declarations"
+        "-Wno-missing-field-initializers"
+    )
+    string(JOIN " " LOOM_COMMON_FLAGS ${LOOM_COMMON_FLAGS})
     if(LOOM_WINDOWS)
         set(LOOM_COMMON_FLAGS "${LOOM_COMMON_FLAGS} -D_WIN32_WINNT=0x0601")
     endif()
@@ -175,17 +189,3 @@ target_link_libraries(loom PRIVATE
 #         SUFFIX      ".so"
 #     )
 # endif()
-
-if(MSVC)
-  add_compile_definitions(
-    _CRT_SECURE_NO_WARNINGS          # suppresses strerror, localtime, etc.
-    _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS  # suppresses codecvt, wstring_convert
-    NOMINMAX                         # prevents min/max macro conflicts
-    WIN32_LEAN_AND_MEAN              # reduces windows.h bloat
-  )
-  add_compile_options(
-    /wd4244   # conversion from X to Y, possible loss of data
-    /wd4267   # conversion from size_t to smaller type
-    /wd4996   # deprecated POSIX names
-  )
-endif()
