@@ -172,3 +172,16 @@ jobs:
         run: cd build && make
       - name: tests
         run: cd build && ctest --output-on-failure
+  windows-build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v2
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
+      - name: Build extension (Windows)
+        shell: cmd
+        env:
+          CL: /utf-8 /D_CRT_SECURE_NO_WARNINGS
+        run: |
+          python setup.py build_ext --inplace
