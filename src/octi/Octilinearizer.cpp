@@ -132,7 +132,7 @@ Score Octilinearizer::draw(const CombGraph& cg, const DBox& box,
   LOGTO(DEBUG, std::cerr) << "Creating grid graphs... ";
   T_START(ggraph);
 #pragma omp parallel for
-  for (size_t i = 0; i < jobs; i++) {
+  for (int i = 0; i < (int)jobs; i++) {
     ggs[i] = newBaseGraph(box, cg, gridSize, borderRad, hananIters, pens);
     ggs[i]->init();
   }
@@ -194,7 +194,7 @@ Score Octilinearizer::draw(const CombGraph& cg, const DBox& box,
   LOGTO(DEBUG, std::cerr) << "Searching initial drawing... ";
 
 #pragma omp parallel for
-  for (size_t btch = 0; btch < jobs; btch++) {
+  for (int btch = 0; btch < (int)jobs; btch++) {
     for (OrderMethod meth : batches[btch]) {
       T_START(draw);
       Drawing drawingCp(ggs[btch]);
@@ -254,7 +254,7 @@ Score Octilinearizer::draw(const CombGraph& cg, const DBox& box,
     std::vector<Drawing> bestFrIters(jobs);
 
 #pragma omp parallel for
-    for (size_t btch = 0; btch < jobs; btch++) {
+    for (int btch = 0; btch < (int)jobs; btch++) {
       for (auto a : batchesLoc[btch]) {
         Drawing drawingCp = drawing;
 
