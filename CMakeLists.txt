@@ -1,83 +1,144 @@
-cmake_minimum_required (VERSION 3.10)
+cmake_minimum_required (VERSION 3.18)
 set(CMAKE_CXX_STANDARD 17)
 
 project (loom-python-plugin)
 
-if (CMAKE_BUILD_TYPE)
-	string(SUBSTRING ${CMAKE_BUILD_TYPE} 0 1 FIRST_CHAR)
-	string(TOUPPER ${FIRST_CHAR} FIRST_CHAR)
-	string(REGEX REPLACE "^.(.*)" "${FIRST_CHAR}\\1" CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
+# -----------------------------------------------------------------------
+# OS / Platform detection
+# -----------------------------------------------------------------------
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(LOOM_OS "windows")
+    set(LOOM_WINDOWS TRUE)
+    message(STATUS "Target OS: Windows")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(LOOM_OS "linux")
+    set(LOOM_LINUX TRUE)
+    message(STATUS "Target OS: Linux")
+else()
+    message(WARNING "Unknown target OS: ${CMAKE_SYSTEM_NAME}")
 endif()
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/lib")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG "${PROJECT_SOURCE_DIR}/lib/debug")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${PROJECT_SOURCE_DIR}/lib/release")
+# -----------------------------------------------------------------------
+# Build type normalisation
+# -----------------------------------------------------------------------
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+        "Build type: Debug | Release | RelWithDebInfo | MinSizeRel" FORCE)
+endif()
 
+string(SUBSTRING ${CMAKE_BUILD_TYPE} 0 1 FIRST_CHAR)
+string(TOUPPER ${FIRST_CHAR} FIRST_CHAR)
+string(REGEX REPLACE "^.(.*)" "${FIRST_CHAR}\\1" CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
+# -----------------------------------------------------------------------
+# Paths
+# -----------------------------------------------------------------------
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+# Remove these — they override what setup.py passes via CMAKE_LIBRARY_OUTPUT_DIRECTORY
+# set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/lib")
+# set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG   "${PROJECT_SOURCE_DIR}/lib/debug")
+# set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE "${PROJECT_SOURCE_DIR}/lib/release")
+
+# -----------------------------------------------------------------------
+# Options
+# -----------------------------------------------------------------------
 option(BUILD_TESTS "Build tests" OFF)
 
+# -----------------------------------------------------------------------
+# Compiler flags per build type
+# -----------------------------------------------------------------------
+# Common flags (applied to all build types)
+set(LOOM_COMMON_FLAGS "-Wall -Wextra")
+
+if(LOOM_WINDOWS)
+    # MinGW needs this for proper Windows API level
+    set(LOOM_COMMON_FLAGS "${LOOM_COMMON_FLAGS} -D_WIN32_WINNT=0x0601")
+endif()
+
+set(CMAKE_CXX_FLAGS_DEBUG
+    "${LOOM_COMMON_FLAGS} -Og -g3 -DLOGLEVEL=3 -D_DEBUG"
+    CACHE STRING "Flags for Debug builds" FORCE)
+
+set(CMAKE_CXX_FLAGS_RELEASE
+    "${LOOM_COMMON_FLAGS} -O3 -DLOGLEVEL=2 -DNDEBUG"
+    CACHE STRING "Flags for Release builds" FORCE)
+
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO
+    "${LOOM_COMMON_FLAGS} -O2 -g -DLOGLEVEL=3 -DNDEBUG"
+    CACHE STRING "Flags for RelWithDebInfo builds" FORCE)
+
+set(CMAKE_CXX_FLAGS_MINSIZEREL
+    "${LOOM_COMMON_FLAGS} -Os -DLOGLEVEL=2 -DNDEBUG"
+    CACHE STRING "Flags for MinSizeRel builds" FORCE)
+
+# -----------------------------------------------------------------------
+# OpenMP
+# -----------------------------------------------------------------------
 find_package(OpenMP)
 if(OPENMP_FOUND)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
+# -----------------------------------------------------------------------
+# LibZip
+# -----------------------------------------------------------------------
 find_package(LibZip)
-
-if (LIBZIP_FOUND)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLIBZIP_FOUND=1")
+if(LIBZIP_FOUND)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLIBZIP_FOUND=1")
 else()
-	message(STATUS "Configuring without libzip")
+    message(STATUS "Configuring without libzip")
 endif()
 
-set(CMAKE_CXX_FLAGS_DEBUG          "-Og -g -DLOGLEVEL=3")
-set(CMAKE_CXX_FLAGS_MINSIZEREL     "${CMAKE_CXX_FLAGS} -DLOGLEVEL=2 -DNDEBUG")
-set(CMAKE_CXX_FLAGS_RELEASE        "${CMAKE_CXX_FLAGS} -DLOGLEVEL=2 -DNDEBUG")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS} -g -DLOGLEVEL=3")
-
-# export compile commands to tools like clang
+# -----------------------------------------------------------------------
+# Export compile commands (for clangd / clang-tidy)
+# -----------------------------------------------------------------------
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Use modern FindPython with pybind11
+# -----------------------------------------------------------------------
+# Python + pybind11
+# -----------------------------------------------------------------------
 set(PYBIND11_FINDPYTHON ON)
 find_package(pybind11 REQUIRED)
-
-# Use modern Python3 module
-find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
-
-# Include Python3 headers
+# Use Development.Module — only needs headers, not libpython (works on manylinux)
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
 include_directories(${Python3_INCLUDE_DIRS})
 
-# --- added: provide LOOM_INCLUDE_DIR for subprojects and expose generated headers
+# -----------------------------------------------------------------------
+# Project include dirs
+# -----------------------------------------------------------------------
 set(LOOM_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/src")
 include_directories(${LOOM_INCLUDE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_BINARY_DIR}/src)
-# --- end added
 
-# Make project headers and generated headers available to all subdirectories/targets
-# include_directories(${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR})
-
-# http://brianmilco.blogspot.de/2012/11/cmake-automatically-use-git-tags-as.html
+# -----------------------------------------------------------------------
+# Git version
+# -----------------------------------------------------------------------
 include(GetGitRevisionDescription)
 git_get_tag(VERSION_GIT)
 get_git_is_dirty(VERSION_GIT_IS_DIRTY)
-if ("${VERSION_GIT_IS_DIRTY}" STREQUAL "")
+if("${VERSION_GIT_IS_DIRTY}" STREQUAL "")
     set(VERSION_GIT_FULL "${VERSION_GIT}")
 else()
     set(VERSION_GIT_FULL "${VERSION_GIT}-${VERSION_GIT_IS_DIRTY}")
 endif()
 
+# -----------------------------------------------------------------------
+# Subdirectories
+# -----------------------------------------------------------------------
 add_subdirectory(src/util)
 add_subdirectory(src/shared)
 add_subdirectory(src/transitmap)
 add_subdirectory(src/loom)
-add_subdirectory(src/cppgtfs)
-add_subdirectory(src/gtfs2graph)
+# add_subdirectory(src/cppgtfs)
+# add_subdirectory(src/gtfs2graph)
 add_subdirectory(src/topo)
 add_subdirectory(src/octi)
 add_subdirectory(src/dot)
 
-# Use pybind11_add_module so PyInit_loom is generated correctly.
-# The output will be named loom.cpython-<ver>-<arch>-linux-gnu.so
+# -----------------------------------------------------------------------
+# pybind11 module
+# -----------------------------------------------------------------------
 pybind11_add_module(loom
     src/Python.cpp
     $<TARGET_OBJECTS:util_objects>
@@ -85,9 +146,9 @@ pybind11_add_module(loom
     $<TARGET_OBJECTS:loom_objects>
     $<TARGET_OBJECTS:topo_objects>
     $<TARGET_OBJECTS:octi_objects>
-    $<TARGET_OBJECTS:cppgtfs_objects>
+    # $<TARGET_OBJECTS:cppgtfs_objects>
     $<TARGET_OBJECTS:dot_objects>
-    $<TARGET_OBJECTS:gtfs2graph_objects>
+    # $<TARGET_OBJECTS:gtfs2graph_objects>
     $<TARGET_OBJECTS:transitmap_objects>
 )
 
@@ -101,10 +162,21 @@ target_link_libraries(loom PRIVATE
     -lpthread
 )
 
-# Override the output filename to libloom-python-plugin.so
-# while keeping the pybind11 PyInit_loom symbol intact
-set_target_properties(loom PROPERTIES
-    OUTPUT_NAME "loom-python-plugin"
-    PREFIX "lib"
-    SUFFIX ".so"
-)
+# -----------------------------------------------------------------------
+# Output naming  (platform-aware)
+# -----------------------------------------------------------------------
+# Remove the custom output naming — pybind11_add_module already sets the
+# correct name, prefix and suffix for the platform
+# if(LOOM_WINDOWS)
+#     set_target_properties(loom PROPERTIES
+#         OUTPUT_NAME "loom-python-plugin"
+#         PREFIX      "lib"
+#         SUFFIX      ".dll"
+#     )
+# else()
+#     set_target_properties(loom PROPERTIES
+#         OUTPUT_NAME "loom-python-plugin"
+#         PREFIX      "lib"
+#         SUFFIX      ".so"
+#     )
+# endif()

@@ -8,8 +8,7 @@ cmake_install.cmake
 CMakeFiles
 *.cfg
 *.cmake
-/build/
-/build-win/
+/build*/
 *.pyc
 compile_commands.json
 .vimrc
