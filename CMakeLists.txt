@@ -49,7 +49,7 @@ option(BUILD_TESTS "Build tests" OFF)
 # Compiler flags per build type
 # -----------------------------------------------------------------------
 if(MSVC)
-    set(LOOM_COMMON_FLAGS "/W3 /EHsc /wd4244 /wd4267 /wd4996 /wd4251 /wd4127")
+    set(LOOM_COMMON_FLAGS "/W3 /EHsc /utf-8 /wd4244 /wd4267 /wd4996 /wd4251 /wd4127 /wd4101 /wd4305 /wd4309 /wd4715")
     add_compile_definitions(
         _CRT_SECURE_NO_WARNINGS
         _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
