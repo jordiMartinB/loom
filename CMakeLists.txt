@@ -146,6 +146,16 @@ add_subdirectory(src/octi)
 add_subdirectory(src/dot)
 
 # -----------------------------------------------------------------------
+# Platform-specific libraries
+# -----------------------------------------------------------------------
+if(WIN32)
+    set(PLATFORM_LIBS ws2_32)
+else()
+    find_package(Threads REQUIRED)
+    set(PLATFORM_LIBS Threads::Threads)
+endif()
+
+# -----------------------------------------------------------------------
 # pybind11 module
 # -----------------------------------------------------------------------
 pybind11_add_module(loom
@@ -168,24 +178,5 @@ target_include_directories(loom PUBLIC
 
 target_link_libraries(loom PRIVATE
     ${LIBZIP_LIBRARY}
-    -lpthread
+    ${PLATFORM_LIBS}
 )
-
-# -----------------------------------------------------------------------
-# Output naming  (platform-aware)
-# -----------------------------------------------------------------------
-# Remove the custom output naming — pybind11_add_module already sets the
-# correct name, prefix and suffix for the platform
-# if(LOOM_WINDOWS)
-#     set_target_properties(loom PROPERTIES
-#         OUTPUT_NAME "loom-python-plugin"
-#         PREFIX      "lib"
-#         SUFFIX      ".dll"
-#     )
-# else()
-#     set_target_properties(loom PROPERTIES
-#         OUTPUT_NAME "loom-python-plugin"
-#         PREFIX      "lib"
-#         SUFFIX      ".so"
-#     )
-# endif()
