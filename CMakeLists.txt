@@ -175,3 +175,17 @@ target_link_libraries(loom PRIVATE
 #         SUFFIX      ".so"
 #     )
 # endif()
+
+if(MSVC)
+  add_compile_definitions(
+    _CRT_SECURE_NO_WARNINGS          # suppresses strerror, localtime, etc.
+    _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS  # suppresses codecvt, wstring_convert
+    NOMINMAX                         # prevents min/max macro conflicts
+    WIN32_LEAN_AND_MEAN              # reduces windows.h bloat
+  )
+  add_compile_options(
+    /wd4244   # conversion from X to Y, possible loss of data
+    /wd4267   # conversion from size_t to smaller type
+    /wd4996   # deprecated POSIX names
+  )
+endif()
