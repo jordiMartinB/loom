@@ -179,5 +179,7 @@ target_include_directories(loom PUBLIC
 
 target_link_libraries(loom PRIVATE
     ${LIBZIP_LIBRARY}
-    ${PLATFORM_LIBS}
+    $<$<NOT:$<PLATFORM_ID:Windows>>:-lpthread>
+    $<$<PLATFORM_ID:Windows>:ws2_32>
+    Python3::Module
 )
