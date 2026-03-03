@@ -137,13 +137,9 @@ endif()
 # -----------------------------------------------------------------------
 add_subdirectory(src/util)
 add_subdirectory(src/shared)
-add_subdirectory(src/transitmap)
 add_subdirectory(src/loom)
-# add_subdirectory(src/cppgtfs)
-# add_subdirectory(src/gtfs2graph)
 add_subdirectory(src/topo)
 add_subdirectory(src/octi)
-add_subdirectory(src/dot)
 
 # -----------------------------------------------------------------------
 # Platform-specific libraries
@@ -166,10 +162,6 @@ pybind11_add_module(loom
     $<TARGET_OBJECTS:loom_objects>
     $<TARGET_OBJECTS:topo_objects>
     $<TARGET_OBJECTS:octi_objects>
-    # $<TARGET_OBJECTS:cppgtfs_objects>
-    $<TARGET_OBJECTS:dot_objects>
-    # $<TARGET_OBJECTS:gtfs2graph_objects>
-    $<TARGET_OBJECTS:transitmap_objects>
 )
 
 target_include_directories(loom PUBLIC
