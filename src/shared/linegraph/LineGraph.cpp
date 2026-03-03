@@ -3,7 +3,6 @@
 // Authors: Patrick Brosi <brosi@informatik.uni-freiburg.de>
 
 #include "3rdparty/json.hpp"
-#include "dot/Parser.h"
 #include "shared/linegraph/LineEdgePL.h"
 #include "shared/linegraph/LineGraph.h"
 #include "shared/linegraph/LineNodePL.h"
@@ -33,126 +32,6 @@ using util::WARN;
 using util::DEBUG;
 using util::ERROR;
 
-// _____________________________________________________________________________
-void LineGraph::readFromDot(std::istream* s) {
-  _bbox = util::geo::Box<double>();
-
-  dot::parser::Parser dp(s);
-  std::map<std::string, LineNode*> idMap;
-
-  size_t eid = 0;
-
-  while (dp.has()) {
-    auto ent = dp.get();
-
-    if (ent.type == dot::parser::EMPTY) {
-      continue;
-    } else if (ent.type == dot::parser::NODE) {
-      // only use nodes with a position
-      if (ent.attrs.find("pos") == ent.attrs.end()) continue;
-      std::string coords = ent.attrs["pos"];
-      std::replace(coords.begin(), coords.end(), ',', ' ');
-
-      std::stringstream ss;
-      ss << coords;
-
-      double x, y;
-
-      ss >> x;
-      ss >> y;
-
-      LineNode* n = 0;
-      if (idMap.find(ent.ids.front()) != idMap.end()) {
-        n = idMap[ent.ids.front()];
-      }
-
-      if (!n) {
-        n = addNd({util::geo::Point<double>(x, y),
-                   std::numeric_limits<uint32_t>::max()});
-        idMap[ent.ids[0]] = n;
-      }
-
-      expandBBox(*n->pl().getGeom());
-
-      Station i("", "", *n->pl().getGeom());
-      if (ent.attrs.find("station_id") != ent.attrs.end() ||
-          ent.attrs.find("label") != ent.attrs.end()) {
-        if (ent.attrs.find("station_id") != ent.attrs.end())
-          i.id = ent.attrs["station_id"];
-        if (ent.attrs.find("label") != ent.attrs.end())
-          i.name = ent.attrs["label"];
-        n->pl().addStop(i);
-      }
-    } else if (ent.type == dot::parser::EDGE) {
-      eid++;
-      std::string prevId = ent.ids.front();
-      if (idMap.find(prevId) == idMap.end())
-        idMap[prevId] = addNd({util::geo::Point<double>(0, 0),
-                               std::numeric_limits<uint32_t>::max()});
-
-      for (size_t i = 1; i < ent.ids.size(); ++i) {
-        std::string curId = ent.ids[i];
-
-        if (idMap.find(curId) == idMap.end())
-          idMap[curId] = addNd({util::geo::Point<double>(0, 0),
-                                std::numeric_limits<uint32_t>::max()});
-        auto e = getEdg(idMap[prevId], idMap[curId]);
-
-        if (!e) {
-          PolyLine<double> pl;
-          e = addEdg(idMap[curId], idMap[prevId], pl);
-        }
-
-        std::string id;
-        if (ent.attrs.find("id") != ent.attrs.end()) {
-          id = ent.attrs["id"];
-        } else if (ent.attrs.find("label") != ent.attrs.end()) {
-          id = ent.attrs["label"];
-        } else if (ent.attrs.find("color") != ent.attrs.end()) {
-          id = ent.attrs["color"];
-        } else {
-          id = util::toString(eid);
-        }
-
-        const Line* r = getLine(id);
-        if (!r) {
-          std::string label = ent.attrs.find("label") == ent.attrs.end()
-                                  ? ""
-                                  : ent.attrs["label"];
-          std::string color = ent.attrs.find("color") == ent.attrs.end()
-                                  ? ""
-                                  : ent.attrs["color"];
-          r = new Line(id, label, color);
-          addLine(r);
-        }
-
-        LineNode* dir = 0;
-
-        if (ent.graphType == dot::parser::DIGRAPH ||
-            ent.graphType == dot::parser::STRICT_DIGRAPH) {
-          dir = idMap[curId];
-        }
-
-        e->pl().addLine(r, dir);
-      }
-    }
-  }
-
-  for (auto n : getNds()) {
-    for (auto e : n->getAdjListOut()) {
-      PolyLine<double> pl;
-      pl << *e->getFrom()->pl().getGeom();
-      pl << *e->getTo()->pl().getGeom();
-
-      e->pl().setPolyline(pl);
-      expandBBox(pl.front());
-      expandBBox(pl.back());
-    }
-  }
-
-  _bbox = util::geo::pad(_bbox, 100);
-  buildGrids();
-}
 // _____________________________________________________________________________
 void LineGraph::readFromTopoJson(nlohmann::json::array_t objects,
                                  nlohmann::json::array_t arcs,

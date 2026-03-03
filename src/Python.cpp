@@ -3,7 +3,6 @@
 #include "loom/Loom.h"
 #include "topo/Topo.h"
 #include "octi/Octi.h"
-#include "transitmap/TransitMap.h"
 
 
 
@@ -65,21 +64,6 @@ PYBIND11_MODULE(loom, m) {
             Args:
                 args (list[str]): Command-line arguments forwarded to octi
                                   (e.g. ["--grid-size", "50"]).
-
-            Returns:
-                int: Exit code (0 on success).
-        )doc");
-
-    m.def("run_transitmap", &run_transitmap, py::arg("args"),
-        R"doc(
-            Run the transitmap rendering stage.
-
-            Reads an octilinear graph from stdin and renders a styled transit map,
-            writing SVG or PDF output to stdout.
-
-            Args:
-                args (list[str]): Command-line arguments forwarded to transitmap
-                                  (e.g. ["--svg", "--line-width", "2"]).
 
             Returns:
                 int: Exit code (0 on success).
