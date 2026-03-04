@@ -81,17 +81,7 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LOOM_COMMON_FLAGS}")
 
-# -----------------------------------------------------------------------
-# OpenMP
-# -----------------------------------------------------------------------
-find_package(OpenMP)
-if(OpenMP_CXX_FOUND)
-    # Use compile flags for object libraries (they don't link themselves).
-    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    # OpenMP::OpenMP_CXX is added to target_link_libraries(loom) below so
-    # lld-link / ld receives libomp.lib / -lgomp at link time.
-endif()
+# OpenMP is intentionally disabled.
 
 # -----------------------------------------------------------------------
 # LibZip
@@ -205,7 +195,4 @@ target_link_libraries(loom PRIVATE
     $<$<NOT:$<PLATFORM_ID:Windows>>:-lpthread>
     $<$<PLATFORM_ID:Windows>:ws2_32>
     Python3::Module
-    # Link the OpenMP runtime so lld-link (Windows) / ld (Linux) can
-    # resolve omp_get_num_procs, __kmpc_fork_call, etc.
-    $<$<BOOL:${OpenMP_CXX_FOUND}>:OpenMP::OpenMP_CXX>
 )
