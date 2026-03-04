@@ -84,16 +84,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LOOM_COMMON_FLAGS}")
 # OpenMP is intentionally disabled.
 
 # -----------------------------------------------------------------------
-# LibZip
-# -----------------------------------------------------------------------
-find_package(LibZip)
-if(LIBZIP_FOUND)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLIBZIP_FOUND=1")
-else()
-    message(STATUS "Configuring without libzip")
-endif()
-
-# -----------------------------------------------------------------------
 # Export compile commands (for clangd / clang-tidy)
 # -----------------------------------------------------------------------
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -191,7 +181,6 @@ target_include_directories(loom PUBLIC
 set_target_properties(loom PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
 
 target_link_libraries(loom PRIVATE
-    ${LIBZIP_LIBRARY}
     $<$<NOT:$<PLATFORM_ID:Windows>>:-lpthread>
     $<$<PLATFORM_ID:Windows>:ws2_32>
     Python3::Module
