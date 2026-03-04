@@ -109,6 +109,26 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Python + pybind11
 # -----------------------------------------------------------------------
 set(PYBIND11_FINDPYTHON ON)
+
+# Allow callers (setup.py / CI) to force which Python executable CMake should
+# use.  CMake's FindPython3 honors `Python3_EXECUTABLE`, but many build
+# wrappers pass `PYTHON_EXECUTABLE` or `Python_EXECUTABLE` instead.  Map those
+# to `Python3_EXECUTABLE` as a CACHE FORCE variable *before* calling
+# find_package(pybind11), because pybind11 triggers its own FindPython search
+# internally (via PYBIND11_FINDPYTHON) and will pick up whatever is cached
+# first.  Without this, actions/setup-python's Python3_ROOT_DIR env var (which
+# always points at the host Python, e.g. 3.12) wins and every wheel ends up as
+# cp312 even when cibuildwheel targets cp313/cp314.
+if(DEFINED PYTHON_EXECUTABLE AND NOT DEFINED Python3_EXECUTABLE)
+  set(Python3_EXECUTABLE "${PYTHON_EXECUTABLE}" CACHE FILEPATH "Python 3 interpreter (from PYTHON_EXECUTABLE)" FORCE)
+endif()
+if(DEFINED Python_EXECUTABLE AND NOT DEFINED Python3_EXECUTABLE)
+  set(Python3_EXECUTABLE "${Python_EXECUTABLE}" CACHE FILEPATH "Python 3 interpreter (from Python_EXECUTABLE)" FORCE)
+endif()
+if(DEFINED Python3_EXECUTABLE)
+  message(STATUS "Python3 executable pinned to: ${Python3_EXECUTABLE}")
+endif()
+
 find_package(pybind11 REQUIRED)
 # Use Development.Module — only needs headers, not libpython (works on manylinux)
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
