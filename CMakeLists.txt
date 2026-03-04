@@ -85,9 +85,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LOOM_COMMON_FLAGS}")
 # OpenMP
 # -----------------------------------------------------------------------
 find_package(OpenMP)
-if(OPENMP_FOUND)
+if(OpenMP_CXX_FOUND)
+    # Use compile flags for object libraries (they don't link themselves).
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    # OpenMP::OpenMP_CXX is added to target_link_libraries(loom) below so
+    # lld-link / ld receives libomp.lib / -lgomp at link time.
 endif()
 
 # -----------------------------------------------------------------------
@@ -189,9 +192,17 @@ target_include_directories(loom PUBLIC
     ${CMAKE_CURRENT_BINARY_DIR}
 )
 
+# pybind11_add_module enables LTO by default, which makes clang-cl emit
+# -flto as a *linker* flag that lld-link does not understand (it expects
+# /lto).  Disable LTO here; sccache also does not support LTO wrappers.
+set_target_properties(loom PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
+
 target_link_libraries(loom PRIVATE
     ${LIBZIP_LIBRARY}
     $<$<NOT:$<PLATFORM_ID:Windows>>:-lpthread>
     $<$<PLATFORM_ID:Windows>:ws2_32>
     Python3::Module
+    # Link the OpenMP runtime so lld-link (Windows) / ld (Linux) can
+    # resolve omp_get_num_procs, __kmpc_fork_call, etc.
+    $<$<BOOL:${OpenMP_CXX_FOUND}>:OpenMP::OpenMP_CXX>
 )
